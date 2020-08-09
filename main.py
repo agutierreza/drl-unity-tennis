@@ -51,15 +51,16 @@ agent = AgentCommon(state_size=state_size, action_size=action_size, num_agents =
 
 def maddpg(n_episodes=5000, max_t=1000):
     scores_deque = deque(maxlen=100)
-    scores = []
+    mvavg_scores = []
+    all_scores = []
     for i_episode in range(1, n_episodes+1):
         env_info = env.reset(train_mode=True)[brain_name] 
         states = env_info.vector_observations
         
         score = np.zeros(num_agents)
         agent.reset()
-        #for t in range(max_t):
-        while True:
+        for t in range(max_t):
+        #while True:
             actions = agent.act(states)
             env_info = env.step(actions)[brain_name]               # send the action to the environment                            
             next_states = env_info.vector_observations               # get the next state        
@@ -72,8 +73,9 @@ def maddpg(n_episodes=5000, max_t=1000):
             
             if np.any(dones):
                 break 
-        scores_deque.append(np.mean(score))
-        scores.append(score)
+        scores_deque.append(np.max(score))
+        all_scores.append(np.max(score))
+        mvavg_scores.append(np.mean(scores_deque))
         print('\rEpisode {}\tAverage Score: {:.2f}'.format(i_episode, np.mean(scores_deque)), end="")
         if i_episode % 100 == 0:
             torch.save(agent.actorL.actor_local.state_dict(), 'checkpoint_actorL.pth')
@@ -81,24 +83,24 @@ def maddpg(n_episodes=5000, max_t=1000):
             
             torch.save(agent.sharedcritic.critic_local.state_dict(), 'checkpoint_critic.pth')
             print('\rEpisode {}\tAverage Score: {:.2f}'.format(i_episode, np.mean(scores_deque)))   
-        if np.mean(scores_deque) >= 5 and len(scores_deque) == 100:
+        if np.mean(scores_deque) >= 0.5 and len(scores_deque) == 100:
             print('\rSolved in {} episodes, with mean score: {:.2f}'.format(i_episode, np.mean(scores_deque)))
             torch.save(agent.actorL.actor_local.state_dict(), 'checkpoint_actorL.pth')
             torch.save(agent.actorR.actor_local.state_dict(), 'checkpoint_actorR.pth')
             torch.save(agent.sharedcritic.critic_local.state_dict(), 'checkpoint_critic.pth')
             break
-    return scores
+    return all_scores, mvavg_scores
     
-scores = maddpg()
+scores, mvavg = maddpg()
 
-
-mean_scores = np.mean(scores, axis = 1)
 
 fig = plt.figure()
 ax = fig.add_subplot(111)
-plt.plot(np.arange(1, len(scores)+1), mean_scores)
+plt.plot(np.arange(1, len(scores)+1), scores, label='Episode scores')
+plt.plot(np.arange(1, len(scores)+1), mvavg, label = 'Moving avg. (100) scores')
 plt.ylabel('Score')
 plt.xlabel('Episode #')
+plt.legend()
 plt.show()
 
 env.close()
