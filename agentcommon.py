@@ -4,7 +4,6 @@ import copy
 from collections import namedtuple, deque
 
 #from model import Actor, Critic
-#These will be for the new actor and critic agent classes
 from actoragent import ActorAgent
 from criticagent import CriticAgent
 
@@ -49,22 +48,24 @@ class AgentCommon():
         # Replay memory
         self.memory = ReplayBuffer(action_size, BUFFER_SIZE, BATCH_SIZE, random_seed)
         
-        #define 2 actors (for each side of the court) and a (shared) critic
+        self.actorL = ActorAgent(state_size, action_size, num_agents, self.noise, LR_ACTOR, self.memory, random_seed)
+        self.actorR = ActorAgent(state_size, action_size, num_agents, self.noise, LR_ACTOR, self.memory, random_seed)
+        self.sharedcritic = CriticAgent(state_size, action_size, num_agents, LR_CRITIC, WEIGHT_DECAY, TAU, random_seed)
     
     def step(self, state, action, reward, next_state, done):
-        #call step for each actor
+        self.actorL.step(state[0], action[0], reward[0], next_state[0], done[0])
+        self.actorR.step(state[1], action[1], reward[1], next_state[1], done[1])
         # Learn, if enough samples are available in memory
         if len(self.memory) > BATCH_SIZE:
-            pass
-            #collect experience sample and train critic based on actors
-
+            experiences1 = self.memory.sample()
+            experiences2 = self.memory.sample()
+            self.sharedcritic.learn(self.actorL,experiences1, GAMMA)
+            self.sharedcritic.learn(self.actorR,experiences2, GAMMA)
 
     def act(self, state, add_noise=True):
-        pass
-        #call 'act' for both actors and retreive actions
-        #return[actionL,actionR]
+        actionL = self.actorL.act(state[0],add_noise=add_noise)
+        actionR = self.actorL.act(state[1],add_noise=add_noise)
+        return[actionL,actionR]
     
     def reset(self):
         self.noise.reset()
-
-
