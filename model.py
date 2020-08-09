@@ -37,6 +37,8 @@ class Actor(nn.Module):
 
     def forward(self, state):
         """Build an actor (policy) network that maps states -> actions."""
+        if state.dim() == 1:
+            state = torch.unsqueeze(state,0)
         x = self.fc1(state)
         x = self.bn_input(x)
         x = F.relu(x)
