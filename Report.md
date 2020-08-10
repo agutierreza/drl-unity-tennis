@@ -9,7 +9,7 @@ Both actor and critic models consist of fully connected layers, usually followed
 
 ## Plot of Rewards
 
-![scores](images/scores.png)
+![scores](scores.png)
 
 ```
 Episode 100	Average Score: 0.00
