@@ -1,4 +1,4 @@
-# DRL-Banana-Unity
+# DRL-Tennis-Unity
 
 
 ## Project Details
